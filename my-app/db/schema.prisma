@@ -1,0 +1,286 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+// Note: Seed data is now located in /db/seeds directory
+// Run with: npm run db:seed
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// User roles enumeration
+enum Role {
+  ADMIN
+  ANALYST
+  OPERATOR
+  VIEWER
+}
+
+// Agent status enumeration
+enum AgentStatus {
+  ACTIVE
+  STANDBY
+  COMPROMISED
+  TRAINING
+  UNDERCOVER
+}
+
+// Risk levels enumeration
+enum RiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+// Operation status enumeration
+enum OperationStatus {
+  PLANNING
+  ACTIVE
+  COMPLETED
+  COMPROMISED
+  SUSPENDED
+}
+
+// System status enumeration
+enum SystemStatus {
+  ONLINE
+  OFFLINE
+  MAINTENANCE
+  WARNING
+}
+
+// Intelligence classification levels
+enum ClassificationLevel {
+  CONFIDENTIAL
+  SECRET
+  TOP_SECRET
+}
+
+// Intelligence source types
+enum IntelligenceType {
+  HUMINT
+  SIGINT
+  DIPLOMATIC
+  OSINT
+}
+
+// Activity log types
+enum ActivityType {
+  MISSION_START
+  MISSION_COMPLETE
+  MISSION_FAILED
+  AGENT_DEPLOYED
+  AGENT_COMPROMISED
+  COMMUNICATION_LOST
+  SYSTEM_ALERT
+  LOGIN
+  LOGOUT
+}
+
+// Users table for authentication and role management
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  username  String   @unique
+  password  String
+  role      Role     @default(VIEWER)
+  avatar    String?
+  isActive  Boolean  @default(true)
+  lastLogin DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  activityLogs ActivityLog[]
+  chatMessages ChatMessage[]
+
+  @@map("users")
+}
+
+// Agents table for field operatives
+model Agent {
+  id           String      @id @default(cuid())
+  agentId      String      @unique // e.g., "G-078W"
+  codename     String      @unique // e.g., "VENGEFUL SPIRIT"
+  realName     String?
+  status       AgentStatus @default(STANDBY)
+  location     String?
+  riskLevel    RiskLevel   @default(LOW)
+  missionCount Int         @default(0)
+  lastSeen     DateTime    @default(now())
+  isActive     Boolean     @default(true)
+  skills       String     // Comma-separated skills/specializations
+  clearanceLevel Int       @default(1) // Security clearance level
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  // Relations
+  operations     OperationAgent[]
+  activityLogs   ActivityLog[]
+  chatMessages   ChatMessage[]
+
+  @@map("agents")
+}
+
+// Operations/Missions table
+model Operation {
+  id            String          @id @default(cuid())
+  operationId   String          @unique // e.g., "OP-OMEGA-001"
+  name          String
+  description   String
+  status        OperationStatus @default(PLANNING)
+  riskLevel     RiskLevel       @default(LOW)
+  location      String?
+  startDate     DateTime?
+  endDate       DateTime?
+  plannedEndDate DateTime?
+  isActive      Boolean         @default(true)
+  briefing      String?
+  objectives    String        // Comma-separated mission objectives
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  // Relations
+  agents        OperationAgent[]
+  activityLogs  ActivityLog[]
+  reports       IntelligenceReport[]
+
+  @@map("operations")
+}
+
+// Junction table for many-to-many relationship between Operations and Agents
+model OperationAgent {
+  id          String   @id @default(cuid())
+  operationId String
+  agentId     String
+  role        String?  // Role in the operation
+  assignedAt  DateTime @default(now())
+
+  // Relations
+  operation   Operation @relation(fields: [operationId], references: [id], onDelete: Cascade)
+  agent       Agent     @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@unique([operationId, agentId])
+  @@map("operation_agents")
+}
+
+// Intelligence reports table
+model IntelligenceReport {
+  id               String              @id @default(cuid())
+  reportId         String              @unique // e.g., "INT-2025-001"
+  title            String
+  description      String?
+  content          String              // Full report content
+  classification   ClassificationLevel @default(CONFIDENTIAL)
+  type             IntelligenceType    @default(HUMINT)
+  location         String?
+  tags             String            // Comma-separated tags e.g., "internal,diplomatic,terrorism"
+  sourceId         String?             // Reference to source
+  operationId      String?             // Related operation
+  threatLevel      RiskLevel          @default(LOW)
+  isActive         Boolean            @default(true)
+  publishedAt      DateTime           @default(now())
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  // Relations
+  operation        Operation?         @relation(fields: [operationId], references: [id])
+  activityLogs     ActivityLog[]
+
+  @@map("intelligence_reports")
+}
+
+// System monitoring components
+model SystemComponent {
+  id          String       @id @default(cuid())
+  name        String       @unique // e.g., "Command Server Alpha"
+  role        String       // e.g., "Primary Server"
+  status      SystemStatus @default(ONLINE)
+  location    String?
+  health      Int          @default(100) // Health percentage 0-100
+  cpuUsage    Int          @default(0)   // CPU usage percentage
+  memoryUsage Int          @default(0)   // Memory usage percentage
+  storageUsage Int         @default(0)   // Storage usage percentage
+  uptime      Int          @default(0)   // Uptime in days
+  lastCheck   DateTime     @default(now())
+  isActive    Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  // Relations
+  activityLogs ActivityLog[]
+
+  @@map("system_components")
+}
+
+// Activity logs for tracking all system activities
+model ActivityLog {
+  id          String       @id @default(cuid())
+  type        ActivityType
+  message     String
+  details     Json?        // Additional details in JSON format
+  timestamp   DateTime     @default(now())
+  userId      String?
+  agentId     String?
+  operationId String?
+  reportId    String?
+  systemId    String?
+
+  // Relations
+  user        User?                @relation(fields: [userId], references: [id])
+  agent       Agent?               @relation(fields: [agentId], references: [id])
+  operation   Operation?           @relation(fields: [operationId], references: [id])
+  report      IntelligenceReport?  @relation(fields: [reportId], references: [id])
+  system      SystemComponent?     @relation(fields: [systemId], references: [id])
+
+  @@map("activity_logs")
+}
+
+// Chat messages for encrypted communications
+model ChatMessage {
+  id          String   @id @default(cuid())
+  channelId   String   // Chat channel identifier
+  senderId    String?  // User ID
+  agentId     String?  // Agent ID
+  handle      String   // Display handle/codename
+  message     String   // Encrypted or plain message
+  isEncrypted Boolean  @default(true)
+  keyLocked   Boolean  @default(true)
+  timestamp   DateTime @default(now())
+  isActive    Boolean  @default(true)
+
+  // Relations
+  sender      User?    @relation(fields: [senderId], references: [id])
+  agent       Agent?   @relation(fields: [agentId], references: [id])
+
+  @@map("chat_messages")
+}
+
+// System statistics for dashboard metrics
+model SystemStats {
+  id              String   @id @default(cuid())
+  date            DateTime @default(now())
+  totalAgents     Int      @default(0)
+  activeAgents    Int      @default(0)
+  compromisedAgents Int    @default(0)
+  trainingAgents  Int      @default(0)
+  totalOperations Int      @default(0)
+  activeOperations Int     @default(0)
+  completedOperations Int  @default(0)
+  systemsOnline   Int      @default(0)
+  totalSystems    Int      @default(0)
+  warnings        Int      @default(0)
+  avgUptime       Float    @default(0)
+  successRate     Float    @default(0)
+
+  @@map("system_stats")
+}
