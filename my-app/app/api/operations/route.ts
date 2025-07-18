@@ -5,7 +5,7 @@ import { zValidator } from '@hono/zod-validator'
 import { prisma } from '@/lib/prisma'
 import { createOperationSchema, updateOperationSchema } from '../schemas'
 
-const app = new Hono()
+const app = new Hono().basePath('/api/operations')
 
 // List all operations
 export const GET = handle(app)

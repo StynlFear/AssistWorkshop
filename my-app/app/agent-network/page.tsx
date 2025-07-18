@@ -4,11 +4,13 @@ import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Search, Filter, MoreHorizontal, MapPin, Clock, Shield } from "lucide-react"
+import { AddAgentForm } from "@/features/agents/components/AddAgentForm"
 
 export default function AgentNetworkPage() {
   const [searchTerm, setSearchTerm] = useState("")
-  const [selectedAgent, setSelectedAgent] = useState(null)
+  const [selectedAgent, setSelectedAgent] = useState<any>(null)
 
   const agents = [
     {
@@ -100,7 +102,17 @@ export default function AgentNetworkPage() {
           <p className="text-sm text-neutral-400">Manage and monitor field operatives</p>
         </div>
         <div className="flex gap-2">
-          <Button className="bg-orange-500 hover:bg-orange-600 text-white">Deploy Agent</Button>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button className="bg-orange-500 hover:bg-orange-600 text-white">Deploy Agent</Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl bg-neutral-900 border-neutral-700 text-white">
+              <DialogHeader>
+                <DialogTitle className="text-lg font-bold text-white tracking-wider">DEPLOY NEW AGENT</DialogTitle>
+              </DialogHeader>
+              <AddAgentForm />
+            </DialogContent>
+          </Dialog>
           <Button className="bg-orange-500 hover:bg-orange-600 text-white">
             <Filter className="w-4 h-4 mr-2" />
             Filter

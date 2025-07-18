@@ -5,7 +5,7 @@ import { zValidator } from '@hono/zod-validator'
 import { prisma } from '@/lib/prisma'
 import { createChatMessageSchema, updateChatMessageSchema } from '../schemas'
 
-const app = new Hono()
+const app = new Hono().basePath('/api/chat-messages')
 
 // List all chat messages
 export const GET = handle(app)

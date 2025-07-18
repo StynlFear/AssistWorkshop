@@ -4,10 +4,12 @@ import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Target, MapPin, Clock, Users, AlertTriangle, CheckCircle, XCircle } from "lucide-react"
+import { AddOperationForm } from "@/features/operations/components/AddOperationForm"
 
 export default function OperationsPage() {
-  const [selectedOperation, setSelectedOperation] = useState(null)
+  const [selectedOperation, setSelectedOperation] = useState<any>(null)
 
   const operations = [
     {
@@ -77,7 +79,7 @@ export default function OperationsPage() {
     },
   ]
 
-  const getStatusColor = (status) => {
+  const getStatusColor = (status: string) => {
     switch (status) {
       case "active":
         return "bg-white/20 text-white"
@@ -92,7 +94,7 @@ export default function OperationsPage() {
     }
   }
 
-  const getPriorityColor = (priority) => {
+  const getPriorityColor = (priority: string) => {
     switch (priority) {
       case "critical":
         return "bg-red-500/20 text-red-500"
@@ -107,7 +109,7 @@ export default function OperationsPage() {
     }
   }
 
-  const getStatusIcon = (status) => {
+  const getStatusIcon = (status: string) => {
     switch (status) {
       case "active":
         return <Target className="w-4 h-4" />
@@ -131,7 +133,17 @@ export default function OperationsPage() {
           <p className="text-sm text-neutral-400">Mission planning and execution oversight</p>
         </div>
         <div className="flex gap-2">
-          <Button className="bg-orange-500 hover:bg-orange-600 text-white">New Operation</Button>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button className="bg-orange-500 hover:bg-orange-600 text-white">New Operation</Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-neutral-900 border-neutral-700 text-white">
+              <DialogHeader>
+                <DialogTitle className="text-lg font-bold text-white tracking-wider">CREATE NEW OPERATION</DialogTitle>
+              </DialogHeader>
+              <AddOperationForm />
+            </DialogContent>
+          </Dialog>
           <Button className="bg-orange-500 hover:bg-orange-600 text-white">Mission Brief</Button>
         </div>
       </div>
@@ -319,7 +331,7 @@ export default function OperationsPage() {
                   <div>
                     <h3 className="text-sm font-medium text-neutral-300 tracking-wider mb-2">OBJECTIVES</h3>
                     <div className="space-y-2">
-                      {selectedOperation.objectives.map((objective, index) => (
+                      {selectedOperation.objectives.map((objective: string, index: number) => (
                         <div key={index} className="flex items-center gap-2 text-sm">
                           <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
                           <span className="text-neutral-300">{objective}</span>

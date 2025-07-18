@@ -5,7 +5,7 @@ import { zValidator } from '@hono/zod-validator'
 import { prisma } from '@/lib/prisma'
 import { createSystemComponentSchema, updateSystemComponentSchema } from '../schemas'
 
-const app = new Hono()
+const app = new Hono().basePath('/api/system-components')
 
 // List all system components
 export const GET = handle(app)

@@ -5,7 +5,7 @@ import { zValidator } from '@hono/zod-validator'
 import { prisma } from '@/lib/prisma'
 import { createIntelligenceReportSchema, updateIntelligenceReportSchema } from '../schemas'
 
-const app = new Hono()
+const app = new Hono().basePath('/api/intelligence-reports')
 
 // List all intelligence reports
 export const GET = handle(app)

@@ -5,7 +5,7 @@ import { zValidator } from '@hono/zod-validator'
 import { prisma } from '@/lib/prisma'
 import { createActivityLogSchema, updateActivityLogSchema } from '../schemas'
 
-const app = new Hono()
+const app = new Hono().basePath('/api/activity-logs')
 
 // List all activity logs
 export const GET = handle(app)
