@@ -13,6 +13,7 @@ export default function OperationsPage() {
   const [operations, setOperations] = useState<OperationWithRelations[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isExploding, setIsExploding] = useState(false)
 
   useEffect(() => {
     const loadOperations = async () => {
@@ -31,8 +32,41 @@ export default function OperationsPage() {
     loadOperations()
   }, [])
 
+  const handleNewOperation = () => {
+    // Play boom sound effect
+    const audio = new Audio('/boom.wav')
+    audio.volume = 0.7
+    audio.play().catch(console.error)
+    
+    // Trigger explosion animation
+    setIsExploding(true)
+    
+    // Reset animation after it completes
+    setTimeout(() => {
+      setIsExploding(false)
+    }, 2000)
+  }
+
   return (
-    <div className="p-6 space-y-6">
+    <div className={`p-6 space-y-6 ${isExploding ? 'screen-shake' : ''}`}>
+      {/* Explosion Effects */}
+      {isExploding && (
+        <>
+          <div className="screen-flash" />
+          <div className="fire-overlay">
+            <div className="fire-particle"></div>
+            <div className="fire-particle"></div>
+            <div className="fire-particle"></div>
+            <div className="fire-particle"></div>
+            <div className="fire-particle"></div>
+            <div className="fire-particle"></div>
+            <div className="fire-particle"></div>
+            <div className="fire-particle"></div>
+            <div className="explosion-center"></div>
+          </div>
+        </>
+      )}
+      
       {/*AI_TIP Header Section*/}
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -41,7 +75,12 @@ export default function OperationsPage() {
           <p className="text-sm text-neutral-400">Mission planning and execution oversight</p>
         </div>
         <div className="flex gap-2">
-          <Button className="bg-orange-500 hover:bg-orange-600 text-white">New Operation</Button>
+          <Button 
+            onClick={handleNewOperation}
+            className="bg-orange-500 hover:bg-orange-600 text-white"
+          >
+            New Operation
+          </Button>
           <Button className="bg-orange-500 hover:bg-orange-600 text-white">Mission Brief</Button>
         </div>
       </div>

@@ -75,3 +75,26 @@ export async function fetchSystems(status?: string, type?: string) {
   const data = await response.json()
   return data.systems
 }
+
+export async function createAgent(agentData: {
+  agentId: string
+  name: string
+  status: string
+  location: string
+  riskLevel: string
+}) {
+  const response = await fetch('/api/agents', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(agentData),
+  })
+  
+  if (!response.ok) {
+    throw new Error('Failed to create agent')
+  }
+  
+  const data = await response.json()
+  return data.agent
+}

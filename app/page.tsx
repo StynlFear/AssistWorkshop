@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronRight, Monitor, Settings, Shield, Target, Users, Bell, RefreshCw } from "lucide-react";
+import { ChevronRight, Monitor, Settings, Shield, Target, Users, Bell, RefreshCw, Mountain } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import CommandCenterPage from "./command-center/page";
 import AgentNetworkPage from "./agent-network/page";
 import OperationsPage from "./operations/page";
 import IntelligencePage from "./intelligence/page";
 import SystemsPage from "./systems/page";
+import CampingPage from "./camping/page";
 
 export default function TacticalDashboard() {
   const [activeSection, setActiveSection] = useState("overview");
@@ -50,6 +51,7 @@ export default function TacticalDashboard() {
               { id: "operations", icon: Target, label: "OPERATIONS" },
               { id: "intelligence", icon: Shield, label: "INTELLIGENCE" },
               { id: "systems", icon: Settings, label: "SYSTEMS" },
+              { id: "camping", icon: Mountain, label: "CAMPING SCENE" },
             ].map((item) => (
               <button
                 key={item.id}
@@ -118,6 +120,7 @@ export default function TacticalDashboard() {
           {activeSection === "operations" && <OperationsPage />}
           {activeSection === "intelligence" && <IntelligencePage />}
           {activeSection === "systems" && <SystemsPage />}
+          {activeSection === "camping" && <CampingPage />}
         </div>
       </div>
     </div>

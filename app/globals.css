@@ -92,3 +92,165 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+/* Explosion and fire effects */
+@keyframes screenShake {
+  0%, 100% { transform: translateX(0); }
+  10% { transform: translateX(-10px) rotate(-1deg); }
+  20% { transform: translateX(10px) rotate(1deg); }
+  30% { transform: translateX(-8px) rotate(-1deg); }
+  40% { transform: translateX(8px) rotate(1deg); }
+  50% { transform: translateX(-6px) rotate(-0.5deg); }
+  60% { transform: translateX(6px) rotate(0.5deg); }
+  70% { transform: translateX(-4px) rotate(-0.5deg); }
+  80% { transform: translateX(4px) rotate(0.5deg); }
+  90% { transform: translateX(-2px); }
+}
+
+@keyframes fireFlicker {
+  0%, 100% { 
+    transform: translateY(0) scale(1) rotate(0deg);
+    opacity: 0.9;
+  }
+  25% { 
+    transform: translateY(-5px) scale(1.1) rotate(2deg);
+    opacity: 1;
+  }
+  50% { 
+    transform: translateY(-8px) scale(1.2) rotate(-1deg);
+    opacity: 0.8;
+  }
+  75% { 
+    transform: translateY(-3px) scale(1.15) rotate(1deg);
+    opacity: 0.95;
+  }
+}
+
+@keyframes fireSpread {
+  0% {
+    transform: scale(0) rotate(0deg);
+    opacity: 0;
+  }
+  25% {
+    transform: scale(0.5) rotate(90deg);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1) rotate(180deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.5) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+@keyframes explosionRipple {
+  0% {
+    transform: scale(0);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+.screen-shake {
+  animation: screenShake 0.8s ease-in-out;
+}
+
+.fire-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 9999;
+  overflow: hidden;
+}
+
+.fire-particle {
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  background: radial-gradient(circle, #ff6b00 0%, #ff3300 50%, #ff0000 100%);
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  animation: fireFlicker 0.5s infinite alternate;
+}
+
+.fire-particle:nth-child(1) { 
+  top: 20%; left: 10%; 
+  animation-delay: 0s;
+  animation-duration: 0.4s;
+}
+.fire-particle:nth-child(2) { 
+  top: 30%; left: 85%; 
+  animation-delay: 0.1s;
+  animation-duration: 0.6s;
+}
+.fire-particle:nth-child(3) { 
+  top: 60%; left: 25%; 
+  animation-delay: 0.2s;
+  animation-duration: 0.5s;
+}
+.fire-particle:nth-child(4) { 
+  top: 70%; left: 70%; 
+  animation-delay: 0.3s;
+  animation-duration: 0.7s;
+}
+.fire-particle:nth-child(5) { 
+  top: 40%; left: 50%; 
+  animation-delay: 0.4s;
+  animation-duration: 0.4s;
+}
+.fire-particle:nth-child(6) { 
+  top: 80%; left: 15%; 
+  animation-delay: 0.5s;
+  animation-duration: 0.6s;
+}
+.fire-particle:nth-child(7) { 
+  top: 15%; left: 60%; 
+  animation-delay: 0.6s;
+  animation-duration: 0.5s;
+}
+.fire-particle:nth-child(8) { 
+  top: 90%; left: 90%; 
+  animation-delay: 0.7s;
+  animation-duration: 0.8s;
+}
+
+.explosion-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100px;
+  height: 100px;
+  background: radial-gradient(circle, #ffff00 0%, #ff6600 30%, #ff0000 70%, transparent 100%);
+  border-radius: 50%;
+  animation: explosionRipple 1s ease-out;
+}
+
+.screen-flash {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(255, 255, 255, 0.8);
+  pointer-events: none;
+  z-index: 10000;
+  animation: flash 0.3s ease-out;
+}
+
+@keyframes flash {
+  0% { opacity: 0; }
+  50% { opacity: 1; }
+  100% { opacity: 0; }
+}
