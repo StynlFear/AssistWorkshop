@@ -1,100 +1,70 @@
-import { Hono } from 'hono'
-import { handle } from 'hono/vercel'
-import { HTTPException } from 'hono/http-exception'
-import { zValidator } from '@hono/zod-validator'
+import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { createSystemComponentSchema, updateSystemComponentSchema } from '../schemas'
 
-const app = new Hono().basePath('/api/system-components')
-
 // List all system components
-export const GET = handle(app)
-app.get('/', async (c) => {
+export async function GET() {
   try {
     const components = await prisma.systemComponent.findMany({
-      include: {
-        activityLogs: true
+      select: {
+        id: true,
+        name: true,
+        role: true,
+        status: true,
+        location: true,
+        health: true,
+        cpuUsage: true,
+        memoryUsage: true,
+        storageUsage: true,
+        uptime: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true
       }
     })
-    return c.json(components)
+    return NextResponse.json(components)
   } catch (error) {
-    throw new HTTPException(500, { message: 'Failed to fetch system components' })
+    console.error('Failed to fetch system components:', error)
+    return NextResponse.json({ error: 'Failed to fetch system components' }, { status: 500 })
   }
-})
-
-// Get system component by ID
-app.get('/:id', async (c) => {
-  try {
-    const id = c.req.param('id')
-    const component = await prisma.systemComponent.findUnique({
-      where: { id },
-      include: {
-        activityLogs: true
-      }
-    })
-    if (!component) {
-      throw new HTTPException(404, { message: 'System component not found' })
-    }
-    return c.json(component)
-  } catch (error) {
-    if (error instanceof HTTPException) throw error
-    throw new HTTPException(500, { message: 'Failed to fetch system component' })
-  }
-})
+}
 
 // Create system component
-app.post('/', zValidator('json', createSystemComponentSchema), async (c) => {
+export async function POST(request: NextRequest) {
   try {
-    const data = await c.req.json()
+    const body = await request.json()
+    
+    // Validate the request body
+    const validatedData = createSystemComponentSchema.parse(body)
+    
     const component = await prisma.systemComponent.create({
-      data
+      data: validatedData,
+      select: {
+        id: true,
+        name: true,
+        role: true,
+        status: true,
+        location: true,
+        health: true,
+        cpuUsage: true,
+        memoryUsage: true,
+        storageUsage: true,
+        uptime: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true
+      }
     })
-    return c.json(component, 201)
+    
+    return NextResponse.json(component, { status: 201 })
   } catch (error: any) {
     if (error?.code === 'P2002') {
-      throw new HTTPException(400, { message: 'Component name already exists' })
+      return NextResponse.json({ error: 'System component name already exists' }, { status: 400 })
     }
-    throw new HTTPException(500, { message: 'Failed to create system component' })
+    if (error?.name === 'ZodError') {
+      return NextResponse.json({ error: 'Invalid input data', details: error.errors }, { status: 400 })
+    }
+    console.error('Failed to create system component:', error)
+    return NextResponse.json({ error: 'Failed to create system component' }, { status: 500 })
   }
-})
-
-// Update system component
-app.put('/:id', zValidator('json', updateSystemComponentSchema), async (c) => {
-  try {
-    const id = c.req.param('id')
-    const data = await c.req.json()
-    const component = await prisma.systemComponent.update({
-      where: { id },
-      data
-    })
-    return c.json(component)
-  } catch (error: any) {
-    if (error?.code === 'P2025') {
-      throw new HTTPException(404, { message: 'System component not found' })
-    }
-    if (error?.code === 'P2002') {
-      throw new HTTPException(400, { message: 'Component name already exists' })
-    }
-    throw new HTTPException(500, { message: 'Failed to update system component' })
-  }
-})
-
-// Delete system component
-app.delete('/:id', async (c) => {
-  try {
-    const id = c.req.param('id')
-    await prisma.systemComponent.delete({
-      where: { id }
-    })
-    return c.json({ message: 'System component deleted successfully' })
-  } catch (error: any) {
-    if (error?.code === 'P2025') {
-      throw new HTTPException(404, { message: 'System component not found' })
-    }
-    throw new HTTPException(500, { message: 'Failed to delete system component' })
-  }
-})
-
-export const POST = handle(app)
-export const PUT = handle(app)
-export const DELETE = handle(app)
+}

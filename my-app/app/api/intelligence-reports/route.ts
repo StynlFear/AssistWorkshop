@@ -1,108 +1,74 @@
-import { Hono } from 'hono'
-import { handle } from 'hono/vercel'
-import { HTTPException } from 'hono/http-exception'
-import { zValidator } from '@hono/zod-validator'
+import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { createIntelligenceReportSchema, updateIntelligenceReportSchema } from '../schemas'
 
-const app = new Hono().basePath('/api/intelligence-reports')
-
 // List all intelligence reports
-export const GET = handle(app)
-app.get('/', async (c) => {
+export async function GET() {
   try {
     const reports = await prisma.intelligenceReport.findMany({
-      include: {
-        operation: true,
-        activityLogs: true
+      select: {
+        id: true,
+        reportId: true,
+        title: true,
+        description: true,
+        content: true,
+        classification: true,
+        type: true,
+        location: true,
+        tags: true,
+        sourceId: true,
+        operationId: true,
+        threatLevel: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true
       }
     })
-    return c.json(reports)
+    return NextResponse.json(reports)
   } catch (error) {
-    throw new HTTPException(500, { message: 'Failed to fetch intelligence reports' })
+    console.error('Failed to fetch intelligence reports:', error)
+    return NextResponse.json({ error: 'Failed to fetch intelligence reports' }, { status: 500 })
   }
-})
-
-// Get intelligence report by ID
-app.get('/:id', async (c) => {
-  try {
-    const id = c.req.param('id')
-    const report = await prisma.intelligenceReport.findUnique({
-      where: { id },
-      include: {
-        operation: true,
-        activityLogs: true
-      }
-    })
-    if (!report) {
-      throw new HTTPException(404, { message: 'Intelligence report not found' })
-    }
-    return c.json(report)
-  } catch (error) {
-    if (error instanceof HTTPException) throw error
-    throw new HTTPException(500, { message: 'Failed to fetch intelligence report' })
-  }
-})
+}
 
 // Create intelligence report
-app.post('/', zValidator('json', createIntelligenceReportSchema), async (c) => {
+export async function POST(request: NextRequest) {
   try {
-    const data = await c.req.json()
+    const body = await request.json()
+    
+    // Validate the request body
+    const validatedData = createIntelligenceReportSchema.parse(body)
+    
     const report = await prisma.intelligenceReport.create({
-      data,
-      include: {
-        operation: true
+      data: validatedData,
+      select: {
+        id: true,
+        reportId: true,
+        title: true,
+        description: true,
+        content: true,
+        classification: true,
+        type: true,
+        location: true,
+        tags: true,
+        sourceId: true,
+        operationId: true,
+        threatLevel: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true
       }
     })
-    return c.json(report, 201)
+    
+    return NextResponse.json(report, { status: 201 })
   } catch (error: any) {
     if (error?.code === 'P2002') {
-      throw new HTTPException(400, { message: 'Report ID already exists' })
+      return NextResponse.json({ error: 'Report ID already exists' }, { status: 400 })
     }
-    throw new HTTPException(500, { message: 'Failed to create intelligence report' })
+    if (error?.name === 'ZodError') {
+      return NextResponse.json({ error: 'Invalid input data', details: error.errors }, { status: 400 })
+    }
+    console.error('Failed to create intelligence report:', error)
+    return NextResponse.json({ error: 'Failed to create intelligence report' }, { status: 500 })
   }
-})
-
-// Update intelligence report
-app.put('/:id', zValidator('json', updateIntelligenceReportSchema), async (c) => {
-  try {
-    const id = c.req.param('id')
-    const data = await c.req.json()
-    const report = await prisma.intelligenceReport.update({
-      where: { id },
-      data,
-      include: {
-        operation: true
-      }
-    })
-    return c.json(report)
-  } catch (error: any) {
-    if (error?.code === 'P2025') {
-      throw new HTTPException(404, { message: 'Intelligence report not found' })
-    }
-    if (error?.code === 'P2002') {
-      throw new HTTPException(400, { message: 'Report ID already exists' })
-    }
-    throw new HTTPException(500, { message: 'Failed to update intelligence report' })
-  }
-})
-
-// Delete intelligence report
-app.delete('/:id', async (c) => {
-  try {
-    const id = c.req.param('id')
-    await prisma.intelligenceReport.delete({
-      where: { id }
-    })
-    return c.json({ message: 'Intelligence report deleted successfully' })
-  } catch (error: any) {
-    if (error?.code === 'P2025') {
-      throw new HTTPException(404, { message: 'Intelligence report not found' })
-    }
-    throw new HTTPException(500, { message: 'Failed to delete intelligence report' })
-  }
-})
-
-export const POST = handle(app)
-export const PUT = handle(app)
-export const DELETE = handle(app)
+}

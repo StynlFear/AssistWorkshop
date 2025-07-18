@@ -1,118 +1,74 @@
-import { Hono } from 'hono'
-import { handle } from 'hono/vercel'
-import { HTTPException } from 'hono/http-exception'
-import { zValidator } from '@hono/zod-validator'
+import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { createOperationSchema, updateOperationSchema } from '../schemas'
 
-const app = new Hono().basePath('/api/operations')
-
 // List all operations
-export const GET = handle(app)
-app.get('/', async (c) => {
+export async function GET() {
   try {
     const operations = await prisma.operation.findMany({
-      include: {
-        agents: {
-          include: {
-            agent: true
-          }
-        },
-        activityLogs: true,
-        reports: true
+      select: {
+        id: true,
+        operationId: true,
+        name: true,
+        description: true,
+        status: true,
+        riskLevel: true,
+        location: true,
+        startDate: true,
+        endDate: true,
+        plannedEndDate: true,
+        isActive: true,
+        briefing: true,
+        objectives: true,
+        createdAt: true,
+        updatedAt: true
       }
     })
-    return c.json(operations)
+    return NextResponse.json(operations)
   } catch (error) {
-    throw new HTTPException(500, { message: 'Failed to fetch operations' })
+    console.error('Failed to fetch operations:', error)
+    return NextResponse.json({ error: 'Failed to fetch operations' }, { status: 500 })
   }
-})
-
-// Get operation by ID
-app.get('/:id', async (c) => {
-  try {
-    const id = c.req.param('id')
-    const operation = await prisma.operation.findUnique({
-      where: { id },
-      include: {
-        agents: {
-          include: {
-            agent: true
-          }
-        },
-        activityLogs: true,
-        reports: true
-      }
-    })
-    if (!operation) {
-      throw new HTTPException(404, { message: 'Operation not found' })
-    }
-    return c.json(operation)
-  } catch (error) {
-    if (error instanceof HTTPException) throw error
-    throw new HTTPException(500, { message: 'Failed to fetch operation' })
-  }
-})
+}
 
 // Create operation
-app.post('/', zValidator('json', createOperationSchema), async (c) => {
+export async function POST(request: NextRequest) {
   try {
-    const data = await c.req.json()
+    const body = await request.json()
+    
+    // Validate the request body
+    const validatedData = createOperationSchema.parse(body)
+    
     const operation = await prisma.operation.create({
-      data,
-      include: {
-        agents: true
+      data: validatedData,
+      select: {
+        id: true,
+        operationId: true,
+        name: true,
+        description: true,
+        status: true,
+        riskLevel: true,
+        location: true,
+        startDate: true,
+        endDate: true,
+        plannedEndDate: true,
+        isActive: true,
+        briefing: true,
+        objectives: true,
+        createdAt: true,
+        updatedAt: true
       }
     })
-    return c.json(operation, 201)
+    
+    return NextResponse.json(operation, { status: 201 })
   } catch (error: any) {
     if (error?.code === 'P2002') {
-      throw new HTTPException(400, { message: 'Operation ID already exists' })
+      return NextResponse.json({ error: 'Operation ID already exists' }, { status: 400 })
     }
-    throw new HTTPException(500, { message: 'Failed to create operation' })
+    if (error?.name === 'ZodError') {
+      return NextResponse.json({ error: 'Invalid input data', details: error.errors }, { status: 400 })
+    }
+    console.error('Failed to create operation:', error)
+    return NextResponse.json({ error: 'Failed to create operation' }, { status: 500 })
   }
-})
-
-// Update operation
-app.put('/:id', zValidator('json', updateOperationSchema), async (c) => {
-  try {
-    const id = c.req.param('id')
-    const data = await c.req.json()
-    const operation = await prisma.operation.update({
-      where: { id },
-      data,
-      include: {
-        agents: true
-      }
-    })
-    return c.json(operation)
-  } catch (error: any) {
-    if (error?.code === 'P2025') {
-      throw new HTTPException(404, { message: 'Operation not found' })
-    }
-    if (error?.code === 'P2002') {
-      throw new HTTPException(400, { message: 'Operation ID already exists' })
-    }
-    throw new HTTPException(500, { message: 'Failed to update operation' })
-  }
-})
-
-// Delete operation
-app.delete('/:id', async (c) => {
-  try {
-    const id = c.req.param('id')
-    await prisma.operation.delete({
-      where: { id }
-    })
-    return c.json({ message: 'Operation deleted successfully' })
-  } catch (error: any) {
-    if (error?.code === 'P2025') {
-      throw new HTTPException(404, { message: 'Operation not found' })
-    }
-    throw new HTTPException(500, { message: 'Failed to delete operation' })
-  }
-})
-
-export const POST = handle(app)
-export const PUT = handle(app)
-export const DELETE = handle(app)
+}

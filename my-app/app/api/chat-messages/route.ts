@@ -1,107 +1,84 @@
-import { Hono } from 'hono'
-import { handle } from 'hono/vercel'
-import { HTTPException } from 'hono/http-exception'
-import { zValidator } from '@hono/zod-validator'
+import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { createChatMessageSchema, updateChatMessageSchema } from '../schemas'
-
-const app = new Hono().basePath('/api/chat-messages')
+import { createChatMessageSchema } from '../schemas'
 
 // List all chat messages
-export const GET = handle(app)
-app.get('/', async (c) => {
+export async function GET(request: NextRequest) {
   try {
+    const url = new URL(request.url)
+    const channelId = url.searchParams.get('channelId')
+    const limit = parseInt(url.searchParams.get('limit') || '50')
+    
+    const whereClause = channelId ? { channelId } : {}
+    
     const messages = await prisma.chatMessage.findMany({
+      where: whereClause,
       include: {
-        sender: true,
-        agent: true
+        sender: {
+          select: {
+            id: true,
+            username: true,
+            role: true
+          }
+        },
+        agent: {
+          select: {
+            id: true,
+            agentId: true,
+            codename: true
+          }
+        }
       },
       orderBy: {
         timestamp: 'desc'
-      }
+      },
+      take: limit
     })
-    return c.json(messages)
+    
+    return NextResponse.json(messages)
   } catch (error) {
-    throw new HTTPException(500, { message: 'Failed to fetch chat messages' })
+    console.error('Failed to fetch chat messages:', error)
+    return NextResponse.json({ error: 'Failed to fetch chat messages' }, { status: 500 })
   }
-})
-
-// Get chat message by ID
-app.get('/:id', async (c) => {
-  try {
-    const id = c.req.param('id')
-    const message = await prisma.chatMessage.findUnique({
-      where: { id },
-      include: {
-        sender: true,
-        agent: true
-      }
-    })
-    if (!message) {
-      throw new HTTPException(404, { message: 'Chat message not found' })
-    }
-    return c.json(message)
-  } catch (error) {
-    if (error instanceof HTTPException) throw error
-    throw new HTTPException(500, { message: 'Failed to fetch chat message' })
-  }
-})
+}
 
 // Create chat message
-app.post('/', zValidator('json', createChatMessageSchema), async (c) => {
+export async function POST(request: NextRequest) {
   try {
-    const data = await c.req.json()
+    const body = await request.json()
+    
+    // Validate the request body
+    const validatedData = createChatMessageSchema.parse(body)
+    
     const message = await prisma.chatMessage.create({
-      data,
+      data: validatedData,
       include: {
-        sender: true,
-        agent: true
+        sender: {
+          select: {
+            id: true,
+            username: true,
+            role: true
+          }
+        },
+        agent: {
+          select: {
+            id: true,
+            agentId: true,
+            codename: true
+          }
+        }
       }
     })
-    return c.json(message, 201)
-  } catch (error) {
-    throw new HTTPException(500, { message: 'Failed to create chat message' })
-  }
-})
-
-// Update chat message
-app.put('/:id', zValidator('json', updateChatMessageSchema), async (c) => {
-  try {
-    const id = c.req.param('id')
-    const data = await c.req.json()
-    const message = await prisma.chatMessage.update({
-      where: { id },
-      data,
-      include: {
-        sender: true,
-        agent: true
-      }
-    })
-    return c.json(message)
+    
+    return NextResponse.json(message, { status: 201 })
   } catch (error: any) {
-    if (error?.code === 'P2025') {
-      throw new HTTPException(404, { message: 'Chat message not found' })
+    if (error?.code === 'P2003') {
+      return NextResponse.json({ error: 'Invalid user or agent ID' }, { status: 400 })
     }
-    throw new HTTPException(500, { message: 'Failed to update chat message' })
-  }
-})
-
-// Delete chat message
-app.delete('/:id', async (c) => {
-  try {
-    const id = c.req.param('id')
-    await prisma.chatMessage.delete({
-      where: { id }
-    })
-    return c.json({ message: 'Chat message deleted successfully' })
-  } catch (error: any) {
-    if (error?.code === 'P2025') {
-      throw new HTTPException(404, { message: 'Chat message not found' })
+    if (error?.name === 'ZodError') {
+      return NextResponse.json({ error: 'Invalid input data', details: error.errors }, { status: 400 })
     }
-    throw new HTTPException(500, { message: 'Failed to delete chat message' })
+    console.error('Failed to create chat message:', error)
+    return NextResponse.json({ error: 'Failed to create chat message' }, { status: 500 })
   }
-})
-
-export const POST = handle(app)
-export const PUT = handle(app)
-export const DELETE = handle(app)
+}

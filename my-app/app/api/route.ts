@@ -1,14 +1,15 @@
-import { Hono } from 'hono';
-import { handle } from 'hono/vercel';
-import { usersRouter } from './users/route';
+import { Hono } from 'hono'
+import { handle } from 'hono/vercel'
+import { app as usersApp } from './users/route'
 
-export const config = {
-  runtime: 'edge',
-};
+const app = new Hono()
 
-const app = new Hono().basePath('/api');
+// Mount routes
+app.route('/users', usersApp)
 
-// Routes
-app.route('/users', usersRouter);
-
-export default handle(app);
+// Export handlers for Next.js App Router
+export const GET = handle(app)
+export const POST = handle(app)
+export const PUT = handle(app)
+export const DELETE = handle(app)
+export const PATCH = handle(app)

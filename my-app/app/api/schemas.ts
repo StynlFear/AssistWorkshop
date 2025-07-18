@@ -25,7 +25,7 @@ export const createUserSchema = z.object({
   email: z.string().email(),
   username: z.string().min(3),
   password: z.string().min(6),
-  role: z.nativeEnum(Role).default('VIEWER'),
+  role: z.enum(['ADMIN', 'ANALYST', 'OPERATOR', 'VIEWER']).default('VIEWER'),
   avatar: z.string().optional(),
   isActive: z.boolean().default(true),
   lastLogin: z.date().optional()
